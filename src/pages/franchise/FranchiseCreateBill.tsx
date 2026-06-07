@@ -19,6 +19,7 @@ interface VerifiedMember {
   status: string;
   phone?: string;
   email?: string;
+  isFirstPurchaseDone?: boolean;
 }
 
 interface InventoryItem {
@@ -129,6 +130,7 @@ const FranchiseCreateBill = () => {
           status: member.status || 'active',
           phone: member.phone,
           email: member.email,
+          isFirstPurchaseDone: member.isFirstPurchaseDone,
         });
         toast.success('Member verified successfully!');
       } else {
@@ -206,10 +208,11 @@ const FranchiseCreateBill = () => {
     setCart(cart.filter((item) => item.productId !== productId));
   };
 
-  // ===== Calculate Totals =====
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const totalBV = cart.reduce((sum, item) => sum + (item.bv * item.quantity), 0);
   const totalPV = cart.reduce((sum, item) => sum + (item.pv * item.quantity), 0);
+
+  const isFirstPurchase = verifiedMember ? !verifiedMember.isFirstPurchaseDone : false;
 
   // ===== Generate Bill =====
   const handleGenerateBill = async () => {
@@ -531,7 +534,7 @@ const FranchiseCreateBill = () => {
                     </div>
 
                     {/* PV Warning */}
-                    {cart.length > 0 && totalPV < 1 && (
+                    {cart.length > 0 && isFirstPurchase && totalPV < 1 && (
                       <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg text-center">
                         <p className="text-sm text-destructive font-medium">
                           ⚠️ Order must have at least 1 PV to proceed.
@@ -545,11 +548,11 @@ const FranchiseCreateBill = () => {
                       className="w-full"
                       size="lg"
                       onClick={handleGenerateBill}
-                      disabled={isProcessing || !verifiedMember || cart.length === 0 || totalPV < 1}
+                      disabled={isProcessing || !verifiedMember || cart.length === 0 || (isFirstPurchase && totalPV < 1)}
                     >
                       {isProcessing 
                         ? 'Processing...' 
-                        : totalPV < 1 && cart.length > 0 
+                        : isFirstPurchase && totalPV < 1 && cart.length > 0 
                           ? 'Minimum 1 PV Required' 
                           : 'Generate Bill'}
                     </Button>
